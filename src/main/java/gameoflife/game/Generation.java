@@ -1,7 +1,8 @@
 package gameoflife.game;
 
-import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static gameoflife.util.Validate.isTrue;
@@ -10,6 +11,7 @@ public class Generation {
 
     private static int CELL_IS_ALIFE = 1;
     private static int CELL_IS_DEAD = 0;
+    private static int NEIGHBOUR_COUNT = 8;
 
     public static Generation createForWidthAndHeight(int width, int height) {
         return new Generation(width, height);
@@ -27,30 +29,38 @@ public class Generation {
     public Generation next() {
         final Generation nextGeneration = new Generation(_width, _height);
         for (Point eachLivingCell : _livingCells) {
-            final int numberOfLivingNeighbours = countLivingNeighbours(eachLivingCell);
+            final List<Point> deadNeighbours = getDeadNeighBours(eachLivingCell);
+            final int numberOfLivingNeighbours = NEIGHBOUR_COUNT - deadNeighbours.size();
             if (numberOfLivingNeighbours == 2 || numberOfLivingNeighbours == 3) {
                 nextGeneration.setAlive(eachLivingCell.x, eachLivingCell.y);
+            }
+            for (Point deadNeighbour : deadNeighbours) {
+                if (deadNeighbour.getX() >= 0 && deadNeighbour.getY() >= 0) {
+                    final int neighBoursAlive = NEIGHBOUR_COUNT - getDeadNeighBours(deadNeighbour).size();
+                    if (neighBoursAlive == 3) {
+                        nextGeneration.setAlive(deadNeighbour.x, deadNeighbour.y);
+                    }
+                }
             }
         }
         return nextGeneration;
     }
 
-    private int countLivingNeighbours(Point point) {
-        int result = 0;
-        final Point neighBour = new Point();
+    private List<Point> getDeadNeighBours(Point eachLivingCell) {
+        final List<Point> result = new ArrayList<Point>();
         for (int x = -1; x <= 1; ++x) {
             for (int y = -1; y <= 1; ++y) {
                 if (x != 0 || y != 0) {
-                    neighBour.setLocation(point.x + x, point.y + y);
-                    if (_livingCells.contains(neighBour)) {
-                        result++;
+                    final Point deadNeighbour = new Point();
+                    deadNeighbour.setLocation(eachLivingCell.x + x, eachLivingCell.y + y);
+                    if (!_livingCells.contains(deadNeighbour)) {
+                        result.add(deadNeighbour);
                     }
                 }
             }
         }
         return result;
     }
-
 
     public void addMatrix(int... matrix) {
         isTrue(matrix.length % (_width * _height) == 0);
@@ -67,9 +77,7 @@ public class Generation {
                 currentX++;
             }
         }
-
     }
-
 
     public void setAlive(int x, int y) {
         _livingCells.add(new Point(x, y));
@@ -77,5 +85,19 @@ public class Generation {
 
     public boolean isAliveAt(int x, int y) {
         return _livingCells.contains(new Point(x, y));
+    }
+
+
+    public int[] toMatrix() {
+        final int[] result = new int[_width * _height];
+        int pointer = 0;
+        for (int y = 0; y < _width; ++y) {
+            for (int x = 0; x < _height; ++x) {
+                result[pointer] = _livingCells.contains(new Point(x, y)) ? 1 : 0;
+                pointer++;
+            }
+        }
+
+        return result;
     }
 }
