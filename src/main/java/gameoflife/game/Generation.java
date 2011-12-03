@@ -18,16 +18,23 @@ public class Generation {
     }
 
     private final Set<Point> _livingCells = new HashSet<Point>();
+
     private final int _width;
     private final int _height;
+    private final int _currentGeneration;
 
     public Generation(int width, int height) {
+        this(width, height, 0);
+    }
+
+    public Generation(int width, int height, int currentGeneration) {
         _width = width;
         _height = height;
+        _currentGeneration = currentGeneration;
     }
 
     public Generation next() {
-        final Generation nextGeneration = new Generation(_width, _height);
+        final Generation nextGeneration = new Generation(_width, _height, _currentGeneration + 1);
         for (Point eachLivingCell : _livingCells) {
             final List<Point> deadNeighbours = getDeadNeighBours(eachLivingCell);
             final int numberOfLivingNeighbours = NEIGHBOUR_COUNT - deadNeighbours.size();
@@ -99,5 +106,13 @@ public class Generation {
         }
 
         return result;
+    }
+
+    public Set<Point> getLivingCells() {
+        return _livingCells;
+    }
+
+    public String generationNumber() {
+        return "" + _currentGeneration;
     }
 }
