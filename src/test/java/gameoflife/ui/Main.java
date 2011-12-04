@@ -1,21 +1,27 @@
 package gameoflife.ui;
 
 import gameoflife.game.*;
+import gameoflife.templates.CellBlock;
+import gameoflife.templates.Pattern;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.*;
 
 public class Main extends JDialog {
     private JPanel contentPane;
     private JPanel _panel;
     private JLabel currentGeneration;
 
-    private final int _width = 200;
-    private final int _height = 200;
-    private final int _sizePerCell = 4;
+    private final int _width = 300;
+    private final int _height = 300;
+    private final int _sizePerCell = 5;
     private final Dimension _dimensions;
 
     private Generation _currentGeneration;
@@ -26,6 +32,22 @@ public class Main extends JDialog {
         setModal(true);
         _dimensions = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
         _currentGeneration = new Generation(_width, _height);
+        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("rpento.lif");
+        final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
+        for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
+            final CellBlock cellBlock = pattern.getCellBlock(i);
+            for (gameoflife.game.Point livingCell : cellBlock.getLivingCells()) {
+                _currentGeneration.setAlive(
+                        livingCell.x + (_width / 2) + cellBlock.getXOffset(),
+                        livingCell.y + (_height / 2) + cellBlock.getYOffset()
+                );
+            }
+        }
+//        initRandom();
+        setMinimumSize(_dimensions);
+    }
+
+    private void initRandom() {
         for (int x = 0; x < _width; ++x) {
             for (int y = 0; y < _height; ++y) {
                 final double v = Math.random() * 2;
@@ -34,7 +56,6 @@ public class Main extends JDialog {
                 }
             }
         }
-        setMinimumSize(_dimensions);
     }
 
     public static void main(String[] args) {
@@ -54,7 +75,16 @@ public class Main extends JDialog {
                 }
             }
         });
-        timer.start();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(3000L);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                timer.start();
+            }
+        }).start();
     }
 
     private void createUIComponents() {
