@@ -9,9 +9,8 @@ import static gameoflife.util.Validate.isTrue;
 
 public class Generation {
 
-    private static int CELL_IS_ALIFE = 1;
-    private static int CELL_IS_DEAD = 0;
-    private static int NEIGHBOUR_COUNT = 8;
+    private static final int CELL_IS_ALIFE = 1;
+    private static final int NEIGHBOUR_COUNT = 8;
 
     public static Generation createForWidthAndHeight(int width, int height) {
         return new Generation(width, height);
@@ -35,19 +34,20 @@ public class Generation {
 
     public Generation next() {
         final Generation nextGeneration = new Generation(_width, _height, _currentGeneration + 1);
+        int call = 0;
         for (Point eachLivingCell : _livingCells) {
+            call++;
             final List<Point> deadNeighbours = getDeadNeighBours(eachLivingCell);
             final int numberOfLivingNeighbours = NEIGHBOUR_COUNT - deadNeighbours.size();
             if (numberOfLivingNeighbours == 2 || numberOfLivingNeighbours == 3) {
                 nextGeneration.setAlive(eachLivingCell.x, eachLivingCell.y);
             }
             for (Point deadNeighbour : deadNeighbours) {
-                if (deadNeighbour.getX() >= 0 && deadNeighbour.getY() >= 0) {
+                    call++;
                     final int neighBoursAlive = NEIGHBOUR_COUNT - getDeadNeighBours(deadNeighbour).size();
                     if (neighBoursAlive == 3) {
                         nextGeneration.setAlive(deadNeighbour.x, deadNeighbour.y);
                     }
-                }
             }
         }
         return nextGeneration;
@@ -58,10 +58,10 @@ public class Generation {
         for (int x = -1; x <= 1; ++x) {
             for (int y = -1; y <= 1; ++y) {
                 if (x != 0 || y != 0) {
-                    final Point deadNeighbour = new Point();
-                    deadNeighbour.setLocation(eachLivingCell.x + x, eachLivingCell.y + y);
-                    if (!_livingCells.contains(deadNeighbour)) {
-                        result.add(deadNeighbour);
+                    final Point neighbour = new Point();
+                    neighbour.setLocation(eachLivingCell.x + x, eachLivingCell.y + y);
+                    if (!_livingCells.contains(neighbour)) {
+                        result.add(neighbour);
                     }
                 }
             }

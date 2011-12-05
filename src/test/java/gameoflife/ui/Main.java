@@ -6,6 +6,7 @@ import gameoflife.templates.Pattern;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.event.MouseInputAdapter;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
@@ -13,26 +14,105 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends JDialog {
+
+    private Timer _timer;
+
+    public static void main(String[] args) {
+        Main dialog = new Main();
+        dialog.pack();
+        dialog.start();
+        dialog.setVisible(true);
+    }
+
     private JPanel contentPane;
     private JPanel _panel;
     private JLabel currentGeneration;
 
-    private final int _width = 300;
-    private final int _height = 300;
-    private final int _sizePerCell = 5;
-    private final Dimension _dimensions;
+    private final int _width = 200;
+    private final int _height = 200;
+    private int _sizePerCell = 1;
 
     private Generation _currentGeneration;
     private final Object _currentGenerationMonitor = new Object();
+    private AtomicBoolean _moveAction = new AtomicBoolean();
+    private AtomicReference<gameoflife.game.Point> _startPoint = new AtomicReference<gameoflife.game.Point>();
+    private AtomicReference<gameoflife.game.Point> _currentTopLeftCorner = new AtomicReference<gameoflife.game.Point>(new gameoflife.game.Point(0, 0));
 
     public Main() {
         setContentPane(contentPane);
         setModal(true);
-        _dimensions = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
+        final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
         _currentGeneration = new Generation(_width, _height);
-        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("rpento.lif");
+//        initWithPattern();
+        initRandom();
+        setMinimumSize(dimension);
+        addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) {
+                _timer.stop();
+                System.exit(0);
+            }
+
+        });
+        final MouseInputAdapter l = new MouseInputAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                _moveAction.set(true);
+                _startPoint.set(new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen()));
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                _moveAction.set(false);
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                mouseDragged(e);
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                synchronized (_currentGenerationMonitor) {
+                    if (_moveAction.get()) {
+                        final gameoflife.game.Point point = new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen());
+                        point.setLocation(
+                                point.x - _startPoint.get().x,
+                                point.y - _startPoint.get().y
+                        );
+                        //System.out.println("( " + point.getX() + " / " + point.getY() + " )");
+                        final gameoflife.game.Point currentTopLeftCorner = _currentTopLeftCorner.get();
+                        final int x = (int) (currentTopLeftCorner.getX() + point.getX());
+                        final int y = (int) (currentTopLeftCorner.getY() + point.getY());
+                        _currentTopLeftCorner.set(
+                                new gameoflife.game.Point(
+                                        x,
+                                        y)
+                        );
+                        _startPoint.set(new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen()));
+                    }
+                }
+            }
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                if (e.getWheelRotation() > 0 && _sizePerCell < 30) {
+                    _sizePerCell++;
+                } else if (_sizePerCell > 1) {
+                    _sizePerCell--;
+                }
+            }
+        };
+        addMouseListener(l);
+        addMouseMotionListener(l);
+        addMouseWheelListener(l);
+    }
+
+
+    private void initWithPattern() {
+        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("gun1.life");
         final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
         for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
             final CellBlock cellBlock = pattern.getCellBlock(i);
@@ -43,8 +123,6 @@ public class Main extends JDialog {
                 );
             }
         }
-//        initRandom();
-        setMinimumSize(_dimensions);
     }
 
     private void initRandom() {
@@ -58,20 +136,13 @@ public class Main extends JDialog {
         }
     }
 
-    public static void main(String[] args) {
-        Main dialog = new Main();
-        dialog.pack();
-        dialog.start();
-        dialog.setVisible(true);
-    }
-
     private void start() {
-        final Timer timer = new Timer(100, new ActionListener() {
+        _timer = new Timer(50, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 synchronized (_currentGenerationMonitor) {
                     _currentGeneration = _currentGeneration.next();
                     _panel.repaint();
-                    currentGeneration.setText("" +_currentGeneration.generationNumber());
+                    currentGeneration.setText("" + _currentGeneration.generationNumber());
                 }
             }
         });
@@ -82,7 +153,7 @@ public class Main extends JDialog {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                timer.start();
+                _timer.start();
             }
         }).start();
     }
@@ -91,13 +162,17 @@ public class Main extends JDialog {
         _panel = new JPanel() {
             @Override
             public void paint(Graphics g) {
-                g.clearRect(0, 0, _dimensions.width, _dimensions.height);
+                g.clearRect(0, 0, getWidth(), getHeight());
                 g.setColor(Color.WHITE);
-                g.fillRect(0, 0, _dimensions.width, _dimensions.height);
+                g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColor(Color.BLACK);
                 final Set<gameoflife.game.Point> livingCells = _currentGeneration.getLivingCells();
                 for (Point livingCell : livingCells) {
-                    g.fillRect(livingCell.x * _sizePerCell, livingCell.y * _sizePerCell, _sizePerCell, _sizePerCell);
+                    g.fillRect(
+                            (livingCell.x * _sizePerCell) + (_currentTopLeftCorner.get().x * _sizePerCell),
+                            (livingCell.y * _sizePerCell)+ (_currentTopLeftCorner.get().y * _sizePerCell),
+                            _sizePerCell,
+                            _sizePerCell);
                 }
             }
         };
