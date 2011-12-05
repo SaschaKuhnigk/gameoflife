@@ -1,9 +1,6 @@
 package gameoflife.game;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static gameoflife.util.Validate.isTrue;
 
@@ -17,6 +14,7 @@ public class Generation {
     }
 
     private final Set<Point> _livingCells = new HashSet<Point>();
+    private final Map<Point, Integer> _calculatedDeadCells = new HashMap<Point, Integer>();
 
     private final int _width;
     private final int _height;
@@ -34,20 +32,26 @@ public class Generation {
 
     public Generation next() {
         final Generation nextGeneration = new Generation(_width, _height, _currentGeneration + 1);
-        int call = 0;
         for (Point eachLivingCell : _livingCells) {
-            call++;
             final List<Point> deadNeighbours = getDeadNeighBours(eachLivingCell);
             final int numberOfLivingNeighbours = NEIGHBOUR_COUNT - deadNeighbours.size();
             if (numberOfLivingNeighbours == 2 || numberOfLivingNeighbours == 3) {
                 nextGeneration.setAlive(eachLivingCell.x, eachLivingCell.y);
             }
             for (Point deadNeighbour : deadNeighbours) {
-                    call++;
-                    final int neighBoursAlive = NEIGHBOUR_COUNT - getDeadNeighBours(deadNeighbour).size();
-                    if (neighBoursAlive == 3) {
-                        nextGeneration.setAlive(deadNeighbour.x, deadNeighbour.y);
-                    }
+                Integer numberOfAliveNeighbours = _calculatedDeadCells.get(deadNeighbour);
+                if (numberOfAliveNeighbours == null) {
+                    numberOfAliveNeighbours = 0;
+                }
+                numberOfAliveNeighbours++;
+                _calculatedDeadCells.put(deadNeighbour, numberOfAliveNeighbours);
+            }
+        }
+        for (Map.Entry<Point, Integer> pointIntegerEntry : _calculatedDeadCells.entrySet()) {
+            final Point deadCell = pointIntegerEntry.getKey();
+            final Integer numberOfNeighbours = pointIntegerEntry.getValue();
+            if (numberOfNeighbours == 3) {
+                setAlive(deadCell.x, deadCell.y);
             }
         }
         return nextGeneration;
