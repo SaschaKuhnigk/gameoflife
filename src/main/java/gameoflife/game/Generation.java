@@ -51,7 +51,7 @@ public class Generation {
             final Point deadCell = pointIntegerEntry.getKey();
             final Integer numberOfNeighbours = pointIntegerEntry.getValue();
             if (numberOfNeighbours == 3) {
-                setAlive(deadCell.x, deadCell.y);
+                nextGeneration.setAlive(deadCell.x, deadCell.y);
             }
         }
         return nextGeneration;

@@ -50,7 +50,9 @@ public class Main extends JDialog {
         initWithPattern();
 //        initRandom();
         setMinimumSize(dimension);
-        addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) {
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
                 _timer.stop();
                 System.exit(0);
             }
@@ -176,7 +178,7 @@ public class Main extends JDialog {
                     if (livingCell.x > minX && livingCell.x < maxX && livingCell.y > minY && livingCell.y < maxY) {
                         g.fillRect(
                                 (livingCell.x * _sizePerCell) + (_currentTopLeftCorner.get().x * _sizePerCell),
-                                (livingCell.y * _sizePerCell)+ (_currentTopLeftCorner.get().y * _sizePerCell),
+                                (livingCell.y * _sizePerCell) + (_currentTopLeftCorner.get().y * _sizePerCell),
                                 _sizePerCell,
                                 _sizePerCell);
                     }
