@@ -47,8 +47,8 @@ public class Main extends JDialog {
         setModal(true);
         final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
         _currentGeneration = new Generation(_width, _height);
-//        initWithPattern();
-        initRandom();
+        initWithPattern();
+//        initRandom();
         setMinimumSize(dimension);
         addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) {
                 _timer.stop();
@@ -82,7 +82,6 @@ public class Main extends JDialog {
                                 point.x - _startPoint.get().x,
                                 point.y - _startPoint.get().y
                         );
-                        //System.out.println("( " + point.getX() + " / " + point.getY() + " )");
                         final gameoflife.game.Point currentTopLeftCorner = _currentTopLeftCorner.get();
                         final int x = (int) (currentTopLeftCorner.getX() + point.getX());
                         final int y = (int) (currentTopLeftCorner.getY() + point.getY());
@@ -112,7 +111,7 @@ public class Main extends JDialog {
 
 
     private void initWithPattern() {
-        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("gun1.life");
+        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("loggrow.lif");
         final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
         for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
             final CellBlock cellBlock = pattern.getCellBlock(i);
@@ -137,10 +136,12 @@ public class Main extends JDialog {
     }
 
     private void start() {
-        _timer = new Timer(50, new ActionListener() {
+        _timer = new Timer(1, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 synchronized (_currentGenerationMonitor) {
+                    final long start = System.currentTimeMillis();
                     _currentGeneration = _currentGeneration.next();
+                    System.out.println("generation: " + _currentGeneration.generationNumber() + " with " + _currentGeneration.getLivingCells().size() + " living cells calculated in " + (System.currentTimeMillis() - start) + " ms");
                     _panel.repaint();
                     currentGeneration.setText("" + _currentGeneration.generationNumber());
                 }
@@ -167,12 +168,18 @@ public class Main extends JDialog {
                 g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColor(Color.BLACK);
                 final Set<gameoflife.game.Point> livingCells = _currentGeneration.getLivingCells();
+                final int minX = _currentTopLeftCorner.get().x * -1;
+                final int maxX = minX + getWidth() / _sizePerCell;
+                final int minY = _currentTopLeftCorner.get().y * -1;
+                final int maxY = minY + getHeight() / _sizePerCell;
                 for (Point livingCell : livingCells) {
-                    g.fillRect(
-                            (livingCell.x * _sizePerCell) + (_currentTopLeftCorner.get().x * _sizePerCell),
-                            (livingCell.y * _sizePerCell)+ (_currentTopLeftCorner.get().y * _sizePerCell),
-                            _sizePerCell,
-                            _sizePerCell);
+                    if (livingCell.x > minX && livingCell.x < maxX && livingCell.y > minY && livingCell.y < maxY) {
+                        g.fillRect(
+                                (livingCell.x * _sizePerCell) + (_currentTopLeftCorner.get().x * _sizePerCell),
+                                (livingCell.y * _sizePerCell)+ (_currentTopLeftCorner.get().y * _sizePerCell),
+                                _sizePerCell,
+                                _sizePerCell);
+                    }
                 }
             }
         };
