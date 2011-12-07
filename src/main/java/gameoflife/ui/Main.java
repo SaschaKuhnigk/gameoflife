@@ -113,7 +113,7 @@ public class Main extends JDialog {
 
 
     private void initWithPattern() {
-        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("loggrow.lif");
+        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("linepuf.lif");
         final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
         for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
             final CellBlock cellBlock = pattern.getCellBlock(i);

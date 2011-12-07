@@ -11,7 +11,7 @@ public class GenerationPerformanceTest {
     @Test
     public void testPerformance() throws Exception {
         final int iterations = 100;
-        final Generation generation = create(generation(1000, 1000).initRandom());
+        final Generation generation = create(generation(600, 600).initRandom());
 
         Generation currentGeneration = generation.next();
         final long startTime = System.currentTimeMillis();
