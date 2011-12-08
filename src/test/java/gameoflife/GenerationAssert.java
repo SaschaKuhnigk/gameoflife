@@ -1,15 +1,13 @@
 package gameoflife;
 
-import gameoflife.game.Generation;
+import gameoflife.game.SaschaGenerationImpl1;
 import org.fest.assertions.GenericAssert;
 
 import java.util.Arrays;
 
-import static java.util.Arrays.toString;
+public class GenerationAssert extends GenericAssert<GenerationAssert, SaschaGenerationImpl1> {
 
-public class GenerationAssert extends GenericAssert<GenerationAssert, Generation> {
-
-    public GenerationAssert(Generation actual) {
+    public GenerationAssert(SaschaGenerationImpl1 actual) {
         super(GenerationAssert.class, actual);
     }
 
