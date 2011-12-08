@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends JDialog {
@@ -46,7 +47,7 @@ public class Main extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
-        _currentGeneration = new Generation(_width, _height);
+        _currentGeneration = new SaschaGenerationImpl1(_width, _height);
         initWithPattern();
 //        initRandom();
         setMinimumSize(dimension);
@@ -138,14 +139,15 @@ public class Main extends JDialog {
     }
 
     private void start() {
+        final AtomicInteger generation = new AtomicInteger(1);
         _timer = new Timer(1, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 synchronized (_currentGenerationMonitor) {
                     final long start = System.currentTimeMillis();
                     _currentGeneration = _currentGeneration.next();
-                    System.out.println("generation: " + _currentGeneration.generationNumber() + " with " + _currentGeneration.getLivingCells().size() + " living cells calculated in " + (System.currentTimeMillis() - start) + " ms");
+                    System.out.println("generation: " + generation.incrementAndGet() + " calculated in " + (System.currentTimeMillis() - start) + " ms");
                     _panel.repaint();
-                    currentGeneration.setText("" + _currentGeneration.generationNumber());
+                    currentGeneration.setText(generation.toString());
                 }
             }
         });
@@ -169,7 +171,7 @@ public class Main extends JDialog {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColor(Color.BLACK);
-                final Set<gameoflife.game.Point> livingCells = _currentGeneration.getLivingCells();
+                final Iterable<gameoflife.game.Point> livingCells = _currentGeneration.getLivingCells();
                 final int minX = _currentTopLeftCorner.get().x * -1;
                 final int maxX = minX + getWidth() / _sizePerCell;
                 final int minY = _currentTopLeftCorner.get().y * -1;

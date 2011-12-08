@@ -1,6 +1,7 @@
 package gameoflife;
 
 import gameoflife.game.Generation;
+import gameoflife.game.SaschaGenerationImpl1;
 
 public class TestDataCreator {
 
@@ -16,7 +17,7 @@ public class TestDataCreator {
         return new GenerationBuilder(width, height);
     }
 
-    public static class GenerationBuilder implements Builder<Generation> {
+    public static class GenerationBuilder implements Builder<SaschaGenerationImpl1> {
 
         private final int width;
         private final int height;
@@ -28,18 +29,18 @@ public class TestDataCreator {
             this.height = height;
         }
 
-        public Builder<Generation> withCells(int... matrix) {
+        public Builder<SaschaGenerationImpl1> withCells(int... matrix) {
             _matrix = matrix;
             return this;
         }
 
-        public Builder<Generation> initRandom() {
+        public Builder<SaschaGenerationImpl1> initRandom() {
             _initRandom = true;
             return this;
         }
 
-        public Generation build() {
-            final Generation result = new Generation(width, height);
+        public SaschaGenerationImpl1 build() {
+            final SaschaGenerationImpl1 result = new SaschaGenerationImpl1(width, height);
             if (_matrix != null) {
                 result.addMatrix(_matrix);
             } else if (_initRandom) {
