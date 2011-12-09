@@ -1,12 +1,12 @@
 package gameoflife;
 
-import gameoflife.game.SaschaGenerationImpl1;
+import gameoflife.impl.SaschasGameOfLife1;
 import org.fest.assertions.Assertions;
 import org.fest.assertions.IntArrayAssert;
 
 public class Assert {
 
-    public static GenerationAssert assertThat(SaschaGenerationImpl1 actual) {
+    public static GenerationAssert assertThat(SaschasGameOfLife1 actual) {
         return new GenerationAssert(actual);
     }
 
