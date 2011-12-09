@@ -13,6 +13,8 @@ import java.util.Set;
 import static com.google.common.collect.Sets.newHashSet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assume.assumeThat;
 
 @RunWith(Theories.class)
 public class GameOfLifeUnitTest {
@@ -23,6 +25,7 @@ public class GameOfLifeUnitTest {
             new SaschasGameOfLife1(),
             new MichasGameOfLife1(),
             new MichasGameOfLife2(),
+            new MichasGameOfLife3()
         };
     }
 
@@ -121,7 +124,11 @@ public class GameOfLifeUnitTest {
 
     @Theory
     public void test_pentadecathlon(GameOfLife gameOfLife) {
-        Set<Point> pentadecathlon = newHashSet(new Point(0,1), new Point(1,1), new Point(2,0), new Point(2,2), new Point(3,1), new Point(4,1), new Point(5,1), new Point(6,1), new Point(7,0), new Point(7,2), new Point(8,1), new Point(9,1));
+        Set<Point> pentadecathlon = newHashSet(
+            new Point(0,1), new Point(1,1), new Point(2,0), new Point(2,2),
+            new Point(3,1), new Point(4,1), new Point(5,1), new Point(6,1),
+            new Point(7,0), new Point(7,2), new Point(8,1), new Point(9,1)
+        );
         for (Point p : pentadecathlon) {
             gameOfLife.setCellAlive(p.x, p.y);
         }
@@ -132,5 +139,34 @@ public class GameOfLifeUnitTest {
 
         Set<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
         assertThat(coordinatesOfAliveCells, is(pentadecathlon));
+    }
+
+    @Theory
+    public void test_glider_at_large_coordinates(GameOfLife gameOfLife) {
+        assumeThat(gameOfLife, not(instanceOf(MichasGameOfLife2.class)));
+        
+        Set<Point> glider = newHashSet(
+            new Point(100001,100002),
+            new Point(100002,100003),
+            new Point(100003,100001),
+            new Point(100003,100002),
+            new Point(100003,100003)
+        );
+        for (Point p : glider) {
+            gameOfLife.setCellAlive(p.x, p.y);
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            gameOfLife.calculateNextGeneration();
+        }
+
+        HashSet<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
+        assertThat(coordinatesOfAliveCells, is(newHashSet(
+            new Point(100002,100003),
+            new Point(100003,100004),
+            new Point(100004,100002),
+            new Point(100004,100003),
+            new Point(100004,100004)
+        )));
     }
 }
