@@ -1,6 +1,6 @@
-package gameoflife.game;
+package gameoflife.impl;
 
-import gameoflife.TestDataCreator;
+import gameoflife.GameOfLife;
 import org.junit.Test;
 
 import static gameoflife.TestDataCreator.create;
@@ -11,15 +11,12 @@ public class GenerationPerformanceTest {
     @Test
     public void testPerformance() throws Exception {
         final int iterations = 100;
-        final Generation generation = create(generation(600, 600).initRandom());
-
-        Generation currentGeneration = generation.next();
+        final GameOfLife gameOfLife = create(generation(600, 600).initRandom());
         final long startTime = System.currentTimeMillis();
         for (int i = 0; i < iterations; ++i) {
-            currentGeneration = currentGeneration.next();
+            gameOfLife.calculateNextGeneration();
         }
         final long timeInMs = System.currentTimeMillis() - startTime;
         System.out.println(timeInMs + " ms");
-
     }
 }

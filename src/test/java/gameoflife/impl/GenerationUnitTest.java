@@ -1,4 +1,4 @@
-package gameoflife.game;
+package gameoflife.impl;
 
 import org.junit.Test;
 
@@ -10,15 +10,15 @@ public class GenerationUnitTest {
 
     @Test
     public void testSetLivingCell() throws Exception {
-        final SaschaGenerationImpl1 generation = create(generation(3, 3));
+        final SaschasGameOfLife1 generation = create(generation(3, 3));
         assertThat(generation).hasDeadCellAt(0, 1);
-        generation.setAlive(0, 1);
+        generation.setCellAlive(0, 1);
         assertThat(generation).hasLivingCellAt(0, 1);
     }
 
     @Test
     public void testAddMatrix() {
-        final SaschaGenerationImpl1 generation = create(generation(3, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(3, 3).withCells(
                 1, 0, 0,
                 0, 1, 0,
                 1, 0, 1
@@ -42,14 +42,14 @@ public class GenerationUnitTest {
             0, 1, 0,
             1, 0, 1
         };
-        final SaschaGenerationImpl1 generation = create(generation(3, 3).withCells(inputMatrix));
+        final SaschasGameOfLife1 generation = create(generation(3, 3).withCells(inputMatrix));
         int[] matrix = generation.toMatrix();
         assertThat(matrix).isEqualTo(inputMatrix);
     }
 
     @Test
     public void testThatLiveCellWithTwoNeighboursLive() {
-        final SaschaGenerationImpl1 generation = create(generation(2, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(2, 3).withCells(
                 1, 0,
                 1, 0,
                 1, 0
@@ -59,7 +59,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testThatLiveCellWithThreeNeighboursLive() {
-        final SaschaGenerationImpl1 generation = create(generation(2, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(2, 3).withCells(
                 1, 1,
                 1, 0,
                 1, 0
@@ -69,7 +69,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testThatLiveCellWithFourNeighboursDies() {
-        final SaschaGenerationImpl1 generation = create(generation(2, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(2, 3).withCells(
                 1, 1,
                 1, 0,
                 1, 1
@@ -79,7 +79,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testThatLiveCellDieOnUnderpopulation() {
-        final SaschaGenerationImpl1 generation = create(generation(3, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(3, 3).withCells(
                 0, 1, 0,
                 0, 1, 0,
                 0, 1, 0
@@ -91,7 +91,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testScenario1() throws Exception {
-        final SaschaGenerationImpl1 generation = create(generation(3, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(3, 3).withCells(
                 0, 1, 0,
                 0, 1, 0,
                 0, 1, 0
@@ -105,7 +105,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testScenario2() throws Exception {
-        final SaschaGenerationImpl1 generation = create(generation(3, 3).withCells(
+        final SaschasGameOfLife1 generation = create(generation(3, 3).withCells(
                 1, 1, 0,
                 1, 0, 0,
                 0, 0, 1
@@ -119,7 +119,7 @@ public class GenerationUnitTest {
 
     @Test
     public void testScenario3() throws Exception {
-        final SaschaGenerationImpl1 generation = create(generation(4, 4).withCells(
+        final SaschasGameOfLife1 generation = create(generation(4, 4).withCells(
                 1, 1, 0, 0,
                 1, 0, 1, 0,
                 0, 0, 1, 0,
@@ -133,7 +133,8 @@ public class GenerationUnitTest {
         );
     }
 
-    private SaschaGenerationImpl1 next(SaschaGenerationImpl1 generation) {
-        return generation.next();
+    private SaschasGameOfLife1 next(SaschasGameOfLife1 generation) {
+        generation.calculateNextGeneration();
+        return generation;
     }
 }

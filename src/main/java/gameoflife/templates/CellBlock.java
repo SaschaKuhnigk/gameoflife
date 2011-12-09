@@ -1,7 +1,6 @@
 package gameoflife.templates;
 
-import gameoflife.game.Point;
-
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
