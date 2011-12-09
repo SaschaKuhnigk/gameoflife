@@ -1,6 +1,7 @@
 package gameoflife.ui;
 
-import gameoflife.game.*;
+import gameoflife.GameOfLife;
+import gameoflife.impl.*;
 import gameoflife.templates.CellBlock;
 import gameoflife.templates.Pattern;
 
@@ -13,7 +14,6 @@ import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,17 +37,18 @@ public class Main extends JDialog {
     private final int _height = 200;
     private int _sizePerCell = 1;
 
-    private Generation _currentGeneration;
+    private GameOfLife _gameOfLife;
     private final Object _currentGenerationMonitor = new Object();
     private AtomicBoolean _moveAction = new AtomicBoolean();
-    private AtomicReference<gameoflife.game.Point> _startPoint = new AtomicReference<gameoflife.game.Point>();
-    private AtomicReference<gameoflife.game.Point> _currentTopLeftCorner = new AtomicReference<gameoflife.game.Point>(new gameoflife.game.Point(0, 0));
+    private AtomicReference<Point> _startPoint = new AtomicReference<Point>();
+    private AtomicReference<Point> _currentTopLeftCorner = new AtomicReference<Point>(new Point(0, 0));
 
     public Main() {
         setContentPane(contentPane);
         setModal(true);
         final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
-        _currentGeneration = new SaschaGenerationImpl1(_width, _height);
+        // _gameOfLife = new SaschasGameOfLife1(_width, _height);
+        _gameOfLife = new MichasGameOfLife2();
         initWithPattern();
 //        initRandom();
         setMinimumSize(dimension);
@@ -63,7 +64,7 @@ public class Main extends JDialog {
             @Override
             public void mousePressed(MouseEvent e) {
                 _moveAction.set(true);
-                _startPoint.set(new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen()));
+                _startPoint.set(new Point(e.getXOnScreen(), e.getYOnScreen()));
             }
 
             @Override
@@ -80,20 +81,20 @@ public class Main extends JDialog {
             public void mouseDragged(MouseEvent e) {
                 synchronized (_currentGenerationMonitor) {
                     if (_moveAction.get()) {
-                        final gameoflife.game.Point point = new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen());
+                        final Point point = new Point(e.getXOnScreen(), e.getYOnScreen());
                         point.setLocation(
                                 point.x - _startPoint.get().x,
                                 point.y - _startPoint.get().y
                         );
-                        final gameoflife.game.Point currentTopLeftCorner = _currentTopLeftCorner.get();
+                        final Point currentTopLeftCorner = _currentTopLeftCorner.get();
                         final int x = (int) (currentTopLeftCorner.getX() + point.getX());
                         final int y = (int) (currentTopLeftCorner.getY() + point.getY());
                         _currentTopLeftCorner.set(
-                                new gameoflife.game.Point(
+                                new Point(
                                         x,
                                         y)
                         );
-                        _startPoint.set(new gameoflife.game.Point(e.getXOnScreen(), e.getYOnScreen()));
+                        _startPoint.set(new Point(e.getXOnScreen(), e.getYOnScreen()));
                     }
                 }
             }
@@ -118,10 +119,10 @@ public class Main extends JDialog {
         final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
         for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
             final CellBlock cellBlock = pattern.getCellBlock(i);
-            for (gameoflife.game.Point livingCell : cellBlock.getLivingCells()) {
-                _currentGeneration.setAlive(
-                        livingCell.x + (_width / 2) + cellBlock.getXOffset(),
-                        livingCell.y + (_height / 2) + cellBlock.getYOffset()
+            for (Point livingCell : cellBlock.getLivingCells()) {
+                _gameOfLife.setCellAlive(
+                    livingCell.x + (_width / 2) + cellBlock.getXOffset(),
+                    livingCell.y + (_height / 2) + cellBlock.getYOffset()
                 );
             }
         }
@@ -132,7 +133,7 @@ public class Main extends JDialog {
             for (int y = 0; y < _height; ++y) {
                 final double v = Math.random() * 2;
                 if (v > 1.7) {
-                    _currentGeneration.setAlive(x, y);
+                    _gameOfLife.setCellAlive(x, y);
                 }
             }
         }
@@ -144,7 +145,7 @@ public class Main extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 synchronized (_currentGenerationMonitor) {
                     final long start = System.currentTimeMillis();
-                    _currentGeneration = _currentGeneration.next();
+                    _gameOfLife.calculateNextGeneration();
                     System.out.println("generation: " + generation.incrementAndGet() + " calculated in " + (System.currentTimeMillis() - start) + " ms");
                     _panel.repaint();
                     currentGeneration.setText(generation.toString());
@@ -171,7 +172,7 @@ public class Main extends JDialog {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColor(Color.BLACK);
-                final Iterable<gameoflife.game.Point> livingCells = _currentGeneration.getLivingCells();
+                final Iterable<Point> livingCells = _gameOfLife.getCoordinatesOfAliveCells();
                 final int minX = _currentTopLeftCorner.get().x * -1;
                 final int maxX = minX + getWidth() / _sizePerCell;
                 final int minY = _currentTopLeftCorner.get().y * -1;
