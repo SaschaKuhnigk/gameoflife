@@ -34,7 +34,6 @@ public class SaschasGameOfLife1 implements GameOfLife {
         _livingCells.add(new Point(x, y));
     }
 
-    @Override
     public boolean isCellAlive(int x, int y) {
         return _livingCells.contains(new Point(x, y));
     }
