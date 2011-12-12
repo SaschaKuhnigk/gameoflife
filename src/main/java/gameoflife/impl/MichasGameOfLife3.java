@@ -18,12 +18,6 @@ public class MichasGameOfLife3 implements GameOfLife {
     }
 
     @Override
-    public boolean isCellAlive(int x, int y) {
-        int temp = cells.get(x, y);
-        return temp == 3 || temp == 11 || temp == 12;
-    }
-
-    @Override
     public void calculateNextGeneration() {
         final SparseTwoDimensionalIntArray nextGeneration = new SparseTwoDimensionalIntArray();
         cells.visitNonZeroValues(new Visitor() {

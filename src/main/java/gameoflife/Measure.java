@@ -14,8 +14,6 @@ public class Measure {
     public static void main(String... args) {
         try {
             measure(SaschasGameOfLife1.class);
-            measure(MichasGameOfLife1.class);
-            measure(MichasGameOfLife2.class);
             measure(MichasGameOfLife3.class);
             System.out.println("Done.");
         } catch (Exception e) {
