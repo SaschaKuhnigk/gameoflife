@@ -48,12 +48,6 @@ public class MichasGameOfLife1 implements GameOfLife {
     }
 
     @Override
-    public boolean isCellAlive(int x, int y) {
-        int temp = cells.get(new Point(x, y));
-        return temp == DEAD_WITH_THREE_ALIVE_NEIGHBOURS || temp == ALIVE_WITH_TWO_ALIVE_NEIGHBOURS || temp == ALIVE_WITH_THREE_ALIVE_NEIGHBOURS;
-    }
-
-    @Override
     public void calculateNextGeneration() {
         PointToIntegerMap nextGeneration = new PointToIntegerMap();
         Point temp = new Point();
