@@ -48,9 +48,9 @@ public class Main extends JDialog {
         setModal(true);
         final Dimension dimension = new Dimension(_width * _sizePerCell, _height * _sizePerCell);
         // _gameOfLife = new SaschasGameOfLife1(_width, _height);
-        _gameOfLife = new MichasGameOfLife3();
-        // initWithPattern();
-        initRandom();
+        _gameOfLife = new MichasGameOfLife4();
+        initWithPattern();
+        // initRandom();
         setMinimumSize(dimension);
         addWindowListener(new WindowAdapter() {
             @Override

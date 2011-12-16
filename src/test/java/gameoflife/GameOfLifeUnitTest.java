@@ -25,7 +25,8 @@ public class GameOfLifeUnitTest {
         return new GameOfLife[] {
             new SaschasGameOfLife1(),
             new MichasGameOfLife1(),
-            new MichasGameOfLife3()
+            new MichasGameOfLife3(),
+            new MichasGameOfLife4()
         };
     }
 
