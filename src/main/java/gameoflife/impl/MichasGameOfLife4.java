@@ -13,10 +13,19 @@ import java.util.*;
  * corners of the small tiles.
  *
  * This implementation is still single threaded and does still calculate
- * every cell, but because of the chosen data structure it should not be
- * hard to derive a multi threaded version and it is also possible to
- * cache complete rows of 32 cells. I also wonder how an implementation
- * with 64x64 bit tiles would perform.
+ * every cell in all exiting tiles and does not remove empty tiles yet.
+ *
+ * But because of the chosen data structure, the following optimizations
+ * should be easy to add:<ul>
+ *     <li>a multi threaded version</li>
+ *     <li>speed up calculation of the inner cells of a 32x32 tile by:<ul>
+ *         <li>Skipping empty rows of 32 cells (when upper and lower row are empty too)</li>
+ *         <li>Cache the calculation result for a complete row</li>
+ *     </ul>
+ *     <li>Remove empty rows</li>
+ * </ul>
+ *
+ * I also wonder how an implementation with 64x64 bit tiles would perform.
  *
  * Stay tuned for MichasGameOfLife5 ...
  */
@@ -49,7 +58,7 @@ public class MichasGameOfLife4 implements GameOfLife {
         public void calculateNextGeneration();
         public void advanceToNextGeneration();
     }
-    
+
     private class TileOf32x32Cells implements Tile {
         int x0;
         int y0;
@@ -89,7 +98,7 @@ public class MichasGameOfLife4 implements GameOfLife {
                 {
                     init();
                 }
-                
+
                 private void init() {
                     // Find first alive cell or set hasNext to false ...
                     for (;;) {
@@ -108,7 +117,7 @@ public class MichasGameOfLife4 implements GameOfLife {
                         }
                     }
                 }
-                
+
                 @Override
                 public boolean hasNext() {
                     if (hasNext == null) {
@@ -438,8 +447,8 @@ public class MichasGameOfLife4 implements GameOfLife {
         }
 
         private void calculateRightBorderExceptCornersWhenEastIsNull() {
-            int i = (aliveCells[0] >>> 29) | ((aliveCells[1] >>> 26) & 0x30) | ((aliveCells[2] >>> 23) & 0x180);
-            // bits set: xx?xx?xx?
+            int i = (aliveCells[0] >>> 30) | ((aliveCells[1] >>> 27) & 0x18) | ((aliveCells[2] >>> 24) & 0xC0);
+            // bits set: ?xx?xx?xx
             int j1 = 2;
             for (;;) {
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
@@ -448,7 +457,7 @@ public class MichasGameOfLife4 implements GameOfLife {
                 if (++j1 == 32) {
                     break;
                 }
-                i = (i >> 3) | ((aliveCells[j1] >>> 23) & 0x180);
+               i = (i >> 3) | ((aliveCells[j1] >>> 24) & 0xC0);
             }
         }
 
@@ -687,7 +696,7 @@ public class MichasGameOfLife4 implements GameOfLife {
                     sb.append((nextAliveCells[j] & m) == 0 ? '.' : 'x');
                     m <<= 1;
                 }
-                
+
                 sb.append('\n');
             }
             return sb.toString();
