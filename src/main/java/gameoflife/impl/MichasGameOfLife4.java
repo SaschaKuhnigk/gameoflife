@@ -22,7 +22,7 @@ import java.util.*;
  *         <li>Skipping empty rows of 32 cells (when upper and lower row are empty too)</li>
  *         <li>Cache the calculation result for a complete row</li>
  *     </ul>
- *     <li>Remove empty rows</li>
+ *     <li>Remove empty tiles</li>
  * </ul>
  *
  * I also wonder how an implementation with 64x64 bit tiles would perform.
@@ -897,7 +897,7 @@ public class MichasGameOfLife4 implements GameOfLife {
 
     private final TheWorld theWorld = new TheWorld();
     private final List<Point> coordinatesOfNewALiveCells = new ArrayList<Point>();
-    
+
     @Override
     public void setCellAlive(int x, int y) {
         theWorld.setCellAliveAt(x, y);
