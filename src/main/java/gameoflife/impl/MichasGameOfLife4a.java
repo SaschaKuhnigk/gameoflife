@@ -43,22 +43,29 @@ public class MichasGameOfLife4a implements GameOfLife {
     private class TileOf32x32Cells implements Tile {
         int x0;
         int y0;
-        int[] aliveCells;
-        int[] nextAliveCells;
+        int[] aliveCells = new int[32];
+        int[] nextAliveCells = new int[32];
         TileOf32x32Cells northWest;
         TileOf32x32Cells north;
         TileOf32x32Cells northEast;
-        TileOf32x32Cells west;
         TileOf32x32Cells east;
-        TileOf32x32Cells southWest;
-        TileOf32x32Cells south;
         TileOf32x32Cells southEast;
+        TileOf32x32Cells south;
+        TileOf32x32Cells southWest;
+        TileOf32x32Cells west;
 
         private TileOf32x32Cells(int x0, int y0) {
             this.x0 = x0;
             this.y0 = y0;
-            aliveCells = new int[32];
-            nextAliveCells = new int[32];
+            TileOf32x32Cells temp;
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 - 32)) != null) { (northWest = temp).southEast = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 - 32)) != null) { (north = temp).south = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 - 32)) != null) { (northEast = temp).southWest = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0)) != null) { (east = temp).west = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 + 32)) != null) { (southEast = temp).northWest = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 + 32)) != null) { (south = temp).north = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 + 32)) != null) { (southWest = temp).northEast = this; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0)) != null) { (west = temp).east = this; }
         }
 
         @Override
@@ -474,12 +481,12 @@ public class MichasGameOfLife4a implements GameOfLife {
                 if (northWest.isRightCellAliveInRow(30)) { i |= 8; }
                 if (west != null && west.isTopRightCornerAlive()) { i |= 0x20; }
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0, y0 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0, y0 - 1));
                 }
             } else if (west != null) {
                 // We only need to check the 3 bottom neighbour cells ...
                 if (west.isTopRightCornerAlive() && (aliveCells[0] & 3) == 3) {
-                    coordinatesOfNewALiveCells.add(new Point(x0, y0 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0, y0 - 1));
                 }
             }
         }
@@ -489,7 +496,7 @@ public class MichasGameOfLife4a implements GameOfLife {
             int i = 1;
             for (;;) {
                 if ((r & 7) == 7) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + i, y0 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + i, y0 - 1));
                 }
                 if (++i == 31) { break; }
                 r >>>= 1;
@@ -501,14 +508,15 @@ public class MichasGameOfLife4a implements GameOfLife {
                 int i = aliveCells[0] >>> 30;
                 if (northEast.isBottomLeftCornerAlive()) { i |= 4; }
                 if (northEast.isLeftCellAliveInRow(30)) { i |= 8; }
-                if (east != null && east.isTopLeftCornerAlive()) { i |= 0x20; }
+                if (east != null && east.isTopLeftCornerAlive()) { i |= 0x20;
+                }
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + 31, y0 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 31, y0 - 1));
                 }
             } else if (east != null) {
                 // We only need to check the 3 bottom neighbour cells ...
                 if (east.isTopLeftCornerAlive() && (aliveCells[0] & 0xC0000000) == 0xC0000000) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + 31, y0 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 31, y0 - 1));
                 }
             }
         }
@@ -524,14 +532,14 @@ public class MichasGameOfLife4a implements GameOfLife {
                 int i = aliveCells[31] & 3;
                 if (southWest.isTopRightCornerAlive()) { i |= 4; }
                 if (southWest.isRightCellAliveInRow(1)) { i |= 8; }
-                if (west != null &&west.isBottomRightCornerAlive()) { i |= 0x20; }
+                if (west != null && west.isBottomRightCornerAlive()) { i |= 0x20; }
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0, y0 + 32));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0, y0 + 32));
                 }
             } else if (west != null) {
                 // We only need to check the 3 top neighbour cells ...
                 if (west.isBottomRightCornerAlive() && (aliveCells[31] & 3) == 3) {
-                    coordinatesOfNewALiveCells.add(new Point(x0, y0 + 32));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0, y0 + 32));
                 }
             }
         }
@@ -541,7 +549,7 @@ public class MichasGameOfLife4a implements GameOfLife {
             int i = 1;
             for (;;) {
                 if ((r & 7) == 7) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + i, y0 + 32));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + i, y0 + 32));
                 }
                 if (++i == 31) { break; }
                 r >>>= 1;
@@ -555,12 +563,12 @@ public class MichasGameOfLife4a implements GameOfLife {
                 if (southEast.isLeftCellAliveInRow(1)) { i |= 8; }
                 if (east != null && east.isBottomLeftCornerAlive()) { i |= 0x20; }
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + 31, y0 + 32));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 31, y0 + 32));
                 }
             } else if (east != null) {
                 // We only need to check the 3 top neighbour cells ...
                 if (east.isBottomLeftCornerAlive() && (aliveCells[31] & 0xC0000000) == 0xC0000000) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + 31, y0 + 32));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 31, y0 + 32));
                 }
             }
         }
@@ -584,7 +592,7 @@ public class MichasGameOfLife4a implements GameOfLife {
         private void giveBirthToTopLeftCornerOfNonExistingEastNeighbourTileWhenNorthEastIsNull() {
             // We only need to check if the 3 left neighbour cells are alive ...
             if (north != null && isTopRightCornerAlive() && north.isBottomRightCornerAlive() && isRightCellAliveInRow(1)) {
-                coordinatesOfNewALiveCells.add(new Point(x0 + 32, y0));
+                coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 32, y0));
             }
         }
 
@@ -594,7 +602,7 @@ public class MichasGameOfLife4a implements GameOfLife {
             int j1 = 2;
             for (;;) {
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 + 32, y0 + j1 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 32, y0 + j1 - 1));
                 }
                 if (++j1 == 32) {
                     break;
@@ -606,7 +614,7 @@ public class MichasGameOfLife4a implements GameOfLife {
         private void giveBirthToBottomLeftCornerOfNonExistingEastNeighbourTileWhenSouthEastIsNull() {
             // We only need to check if the 3 left neighbour cells are alive ...
             if (south != null && isBottomRightCornerAlive() && south.isTopRightCornerAlive() && isRightCellAliveInRow(30)) {
-                coordinatesOfNewALiveCells.add(new Point(x0 + 32, y0 + 31));
+                coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 + 32, y0 + 31));
             }
         }
 
@@ -629,7 +637,7 @@ public class MichasGameOfLife4a implements GameOfLife {
         private void giveBirthToTopRightCornerOfNonExistingWestNeighbourTileWhenNorthWestIsNull() {
             // We only need to check if the 3 right neighbour cells are alive ...
             if (north != null && isTopLeftCornerAlive() && north.isBottomLeftCornerAlive() && isLeftCellAliveInRow(1)) {
-                coordinatesOfNewALiveCells.add(new Point(x0 - 1, y0));
+                coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 - 1, y0));
             }
         }
 
@@ -639,7 +647,7 @@ public class MichasGameOfLife4a implements GameOfLife {
             int j1 = 2;
             for (;;) {
                 if (ALIVE_IN_NEXT_GENERATION[i]) {
-                    coordinatesOfNewALiveCells.add(new Point(x0 - 1, y0 + j1 - 1));
+                    coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 - 1, y0 + j1 - 1));
                 }
                 if (++j1 == 32) {
                     break;
@@ -651,7 +659,7 @@ public class MichasGameOfLife4a implements GameOfLife {
         private void giveBirthToBottomRightCornerOfNonExistingWestNeighbourTileWhenSouthWestIsNull() {
             // We only need to check if the 3 right neighbour cells are alive ...
             if (south != null && isBottomLeftCornerAlive() && south.isTopLeftCornerAlive() && isLeftCellAliveInRow(30)) {
-                coordinatesOfNewALiveCells.add(new Point(x0 - 1, y0 + 31));
+                coordinatesOfNewAliveCellsOutsideAnyExistingTile.add(new Point(x0 - 1, y0 + 31));
             }
         }
 
@@ -806,31 +814,6 @@ public class MichasGameOfLife4a implements GameOfLife {
         @Override
         protected TileOf32x32Cells newChild(int x0, int y0) {
             TileOf32x32Cells newChild = new TileOf32x32Cells(x0, y0);
-            TileOf32x32Cells temp ;
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 - 32)) != null) {
-                (newChild.northWest = temp).southEast = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 - 32)) != null) {
-                (newChild.north = temp).south = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 - 32)) != null) {
-                (newChild.northEast = temp).southWest = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0)) != null) {
-                (newChild.west = temp).east = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0)) != null) {
-                (newChild.east = temp).west = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 + 32)) != null) {
-                (newChild.southWest = temp).northEast = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 + 32)) != null) {
-                (newChild.south = temp).north = newChild;
-            }
-            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 + 32)) != null) {
-                (newChild.southEast = temp).northWest = newChild;
-            }
             return newChild;
         }
 
@@ -896,7 +879,7 @@ public class MichasGameOfLife4a implements GameOfLife {
     }
 
     private final TheWorld theWorld = new TheWorld();
-    private final Queue<Point> coordinatesOfNewALiveCells = new ConcurrentLinkedQueue<Point>();
+    private final Collection<Point> coordinatesOfNewAliveCellsOutsideAnyExistingTile = new ConcurrentLinkedQueue<Point>();
     private final ParallelExecutor parallelExecutor = new ParallelExecutor();
 
     @Override
@@ -909,10 +892,10 @@ public class MichasGameOfLife4a implements GameOfLife {
         theWorld.prepareCalculationOfNextGeneration();
         parallelExecutor.finishAllAddedTasks();
         theWorld.advanceToNextGeneration();
-        Point point;
-        while ((point = coordinatesOfNewALiveCells.poll()) != null) {
+        for (Point point : coordinatesOfNewAliveCellsOutsideAnyExistingTile) {
             theWorld.setCellAliveAt(point.x, point.y);
         }
+        coordinatesOfNewAliveCellsOutsideAnyExistingTile.clear();
     }
 
     @Override

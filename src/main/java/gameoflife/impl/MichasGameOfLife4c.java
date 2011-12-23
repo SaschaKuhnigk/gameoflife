@@ -6,30 +6,10 @@ import java.awt.Point;
 import java.util.*;
 
 /**
- * A basic implementation, which uses small tiles (32x32 bit) as leaf
- * nodes in a very flat tree (only 4 levels for a 2^32 x 2^32 world).
- *
- * Unfortunately a lot of code is needed for calculating the borders and
- * corners of the small tiles.
- *
- * This implementation is still single threaded and does still calculate
- * every cell in all exiting tiles and does not remove empty tiles yet.
- *
- * But because of the chosen data structure, the following optimizations
- * should be easy to add:<ul>
- *     <li>a multi threaded version</li>
- *     <li>speed up calculation of the inner cells of a 32x32 tile by:<ul>
- *         <li>Skipping empty rows of 32 cells (when upper and lower row are empty too)</li>
- *         <li>Cache the calculation result for a complete row</li>
- *     </ul>
- *     <li>Remove empty tiles</li>
- * </ul>
- *
- * I also wonder how an implementation with 64x64 bit tiles would perform.
- *
- * Stay tuned for MichasGameOfLife5 ...
+ * Nearly the same implementation as {@link MichasGameOfLife4b},
+ * but this version removes empty tiles.
  */
-public class MichasGameOfLife4 implements GameOfLife {
+public class MichasGameOfLife4c implements GameOfLife {
 
     /**
      * The bits of the index into this array represent:<ul>
@@ -56,7 +36,7 @@ public class MichasGameOfLife4 implements GameOfLife {
         public void setCellAliveAt(int x, int y);
         Iterator<Point> getCoordinatesOfAliveCells();
         public void calculateNextGeneration();
-        public void advanceToNextGeneration();
+        public void advanceToNextGenerationRemovingEmptyTiles();
     }
 
     private class TileOf32x32Cells implements Tile {
@@ -72,6 +52,7 @@ public class MichasGameOfLife4 implements GameOfLife {
         TileOf32x32Cells south;
         TileOf32x32Cells southWest;
         TileOf32x32Cells west;
+        boolean isCandidateForRemoval;
 
         private TileOf32x32Cells(int x0, int y0) {
             this.x0 = x0;
@@ -85,6 +66,31 @@ public class MichasGameOfLife4 implements GameOfLife {
             if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 + 32)) != null) { (south = temp).north = this; }
             if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 + 32)) != null) { (southWest = temp).northEast = this; }
             if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0)) != null) { (west = temp).east = this; }
+        }
+
+        public void reset(int x0, int y0) {
+            this.x0 = x0;
+            this.y0 = y0;
+
+            // No need to execute Arrays.fill(aliveCells, 0);
+            // because only tiles with no alive cells in the
+            // current generation become candidates for removal.
+
+            // No need to execute Arrays.fill(nextAliveCells, 0);
+            // because only tiles with no alive cells
+            // in the next generation are added to the tilePool.
+
+            TileOf32x32Cells temp;
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 - 32)) != null) { (northWest = temp).southEast = this; } else { northWest = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 - 32)) != null) { (north = temp).south = this; } else { north = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 - 32)) != null) { (northEast = temp).southWest = this; } else { northEast = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0)) != null) { (east = temp).west = this; } else { east = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 + 32, y0 + 32)) != null) { (southEast = temp).northWest = this; } else { southEast = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0, y0 + 32)) != null) { (south = temp).north = this; } else { south = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0 + 32)) != null) { (southWest = temp).northEast = this; } else { southWest = null; }
+            if ((temp = theWorld.getTileOf32x32CellsAt(x0 - 32, y0)) != null) { (west = temp).east = this; } else { west = null; }
+
+            isCandidateForRemoval = false;
         }
 
         @Override
@@ -246,28 +252,38 @@ public class MichasGameOfLife4 implements GameOfLife {
             int upperRow = (north == null ? 0 : north.aliveCells[31]);
             int row = aliveCells[0];
             int lowerRow = aliveCells[1];
+            int numberOfConsecutiveEmptyRows;
+            if (lowerRow != 0) {
+                numberOfConsecutiveEmptyRows = 0;
+            } else if (row != 0) {
+                numberOfConsecutiveEmptyRows = 1;
+            } else {
+                numberOfConsecutiveEmptyRows = (upperRow != 0 ? 2 : 3);
+            }
             int y = 0;
             for (;;) {
-                int m1 = 0x7;
-                int m2 = 0x2;
-                int shiftUpperRow = 0;
-                int shiftRow = -3;
-                int shiftLowerRow = -6;
-                for (;;) {
-                    int i = (upperRow & m1) >>> shiftUpperRow
-                            | (shiftRow < 0 ? (row & m1) << -shiftRow : (row & m1) >>> shiftRow)
-                            | (shiftLowerRow < 0 ? (lowerRow & m1) << -shiftLowerRow : (lowerRow & m1) >>> shiftLowerRow);
-                    if (ALIVE_IN_NEXT_GENERATION[i]) {
-                        nextAliveCells[y] |= m2;
+                if (numberOfConsecutiveEmptyRows < 3) {
+                    int m1 = 0x7;
+                    int m2 = 0x2;
+                    int shiftUpperRow = 0;
+                    int shiftRow = -3;
+                    int shiftLowerRow = -6;
+                    for (;;) {
+                        int i = (upperRow & m1) >>> shiftUpperRow
+                                | (shiftRow < 0 ? (row & m1) << -shiftRow : (row & m1) >>> shiftRow)
+                                | (shiftLowerRow < 0 ? (lowerRow & m1) << -shiftLowerRow : (lowerRow & m1) >>> shiftLowerRow);
+                        if (ALIVE_IN_NEXT_GENERATION[i]) {
+                            nextAliveCells[y] |= m2;
+                        }
+                        if (m2 == 0x40000000) {
+                            break;
+                        }
+                        m1 <<= 1;
+                        m2 <<= 1;
+                        ++shiftUpperRow;
+                        ++shiftRow;
+                        ++shiftLowerRow;
                     }
-                    if (m2 == 0x40000000) {
-                        break;
-                    }
-                    m1 <<= 1;
-                    m2 <<= 1;
-                    ++shiftUpperRow;
-                    ++shiftRow;
-                    ++shiftLowerRow;
                 }
                 if (y == 31) {
                     break;
@@ -276,6 +292,14 @@ public class MichasGameOfLife4 implements GameOfLife {
                 row = lowerRow;
                 ++y;
                 lowerRow = (y < 31 ? aliveCells[y + 1] : (south == null ? 0 : south.aliveCells[0]));
+                if (lowerRow != 0) {
+                    numberOfConsecutiveEmptyRows = 0;
+                } else {
+                    ++numberOfConsecutiveEmptyRows;
+                }
+            }
+            if (numberOfConsecutiveEmptyRows == 34) {
+                isCandidateForRemoval = true;
             }
         }
 
@@ -683,10 +707,50 @@ public class MichasGameOfLife4 implements GameOfLife {
         }
 
         @Override
+        public void advanceToNextGenerationRemovingEmptyTiles() {
+            throw new UnsupportedOperationException();
+        }
+
         public void advanceToNextGeneration() {
             int[] temp = aliveCells;
             aliveCells = nextAliveCells;
             Arrays.fill(nextAliveCells = temp, 0);
+        }
+
+        public boolean hasNoAliveCellsInNextGeneration() {
+            for (int i = 0; i < 32; ++i) {
+                if (nextAliveCells[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void remove() {
+            if (hasAliveCellsInCurrentGeneration() || hasAliveCellsInNextGeneration()) {
+                throw new IllegalStateException();
+            }
+            if (northWest != null) { northWest.southEast = null; }
+            if (north != null) { north.south = null; }
+            if (northEast != null) { northEast.southWest = null; }
+            if (east != null) { east.west = null; }
+            if (southEast != null) { southEast.northWest = null; }
+            if (south != null) { south.north = null; }
+            if (southWest != null) { southWest.northEast = null; }
+            if (west != null) { west.east = null; }
+        }
+
+        private boolean hasAliveCellsInNextGeneration() {
+            return !hasNoAliveCellsInNextGeneration();
+        }
+
+        private boolean hasAliveCellsInCurrentGeneration() {
+            for (int i = 0; i < 32; ++i) {
+                if (aliveCells[i] != 0) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -818,9 +882,9 @@ public class MichasGameOfLife4 implements GameOfLife {
         }
 
         @Override
-        public void advanceToNextGeneration() {
+        public void advanceToNextGenerationRemovingEmptyTiles() {
             for (int i = 0; i < n; ++i) {
-                nonNullChildren[i].advanceToNextGeneration();
+                nonNullChildren[i].advanceToNextGenerationRemovingEmptyTiles();
             }
         }
     }
@@ -832,8 +896,38 @@ public class MichasGameOfLife4 implements GameOfLife {
 
         @Override
         protected TileOf32x32Cells newChild(int x0, int y0) {
-            TileOf32x32Cells newChild = new TileOf32x32Cells(x0, y0);
+            TileOf32x32Cells newChild;
+            if (tilePool.isEmpty()) {
+                newChild = new TileOf32x32Cells(x0, y0);                
+            } else {
+                newChild = tilePool.removeFirst();
+                newChild.reset(x0, y0);
+            }
             return newChild;
+        }
+
+        @Override
+        public void advanceToNextGenerationRemovingEmptyTiles() {
+            int i = 0;
+            while (i < n) {
+                TileOf32x32Cells child = nonNullChildren[i++];
+                if (child.isCandidateForRemoval) {
+                    if (child.hasNoAliveCellsInNextGeneration()) {
+                        child.remove();
+                        if (i == n) {
+                            --n;
+                        } else {
+                            nonNullChildren[--i] = nonNullChildren[--n];
+                        }
+                        tilePool.addFirst(child);
+                        children[(child.x0 >>> 5) & 0x1ff][(child.y0 >>> 5) & 0x1ff] = null;
+                        continue;
+                    } else {
+                        child.isCandidateForRemoval = false;
+                    }
+                }
+                child.advanceToNextGeneration();
+            }
         }
     }
 
@@ -873,6 +967,7 @@ public class MichasGameOfLife4 implements GameOfLife {
     }
 
     private final TheWorld theWorld = new TheWorld();
+    private final Deque<TileOf32x32Cells> tilePool = new LinkedList<TileOf32x32Cells>();
     private final Collection<Point> coordinatesOfNewAliveCellsOutsideAnyExistingTile = new ArrayList<Point>();
 
     @Override
@@ -883,7 +978,7 @@ public class MichasGameOfLife4 implements GameOfLife {
     @Override
     public void calculateNextGeneration() {
         theWorld.calculateNextGeneration();
-        theWorld.advanceToNextGeneration();
+        theWorld.advanceToNextGenerationRemovingEmptyTiles();
         for (Point point : coordinatesOfNewAliveCellsOutsideAnyExistingTile) {
             theWorld.setCellAliveAt(point.x, point.y);
         }
