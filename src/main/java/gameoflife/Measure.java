@@ -16,6 +16,7 @@ public class Measure {
             measure(SaschasGameOfLife1.class);
             measure(MichasGameOfLife3.class);
             measure(MichasGameOfLife4.class);
+            measure(MichasGameOfLife5.class);
             System.out.println("Done.");
         } catch (Exception e) {
             e.printStackTrace(System.err);
