@@ -1,20 +1,23 @@
 package gameoflife;
 
 import gameoflife.impl.*;
+import gameoflife.templates.CellBlock;
+import gameoflife.templates.Pattern;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import java.awt.*;
+import java.awt.Point;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assume.assumeThat;
 
 @RunWith(Theories.class)
@@ -25,7 +28,9 @@ public class GameOfLifeUnitTest {
         return new GameOfLife[] {
             new SaschasGameOfLife1(),
             new MichasGameOfLife1(),
-            new MichasGameOfLife3()
+            new MichasGameOfLife3(),
+            new MichasGameOfLife4(),
+            new MichasGameOfLife5()
         };
     }
 
@@ -173,11 +178,61 @@ public class GameOfLifeUnitTest {
 
         HashSet<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
         assertThat(coordinatesOfAliveCells, is(newHashSet(
-            new Point(100002,100003),
-            new Point(100003,100004),
-            new Point(100004,100002),
-            new Point(100004,100003),
-            new Point(100004,100004)
+                new Point(100002, 100003),
+                new Point(100003, 100004),
+                new Point(100004, 100002),
+                new Point(100004, 100003),
+                new Point(100004, 100004)
         )));
+    }
+
+    @Theory
+    public void test_that_the_world_is_a_torus(GameOfLife gameOfLife) {
+        gameOfLife.setCellAlive(Integer.MIN_VALUE, Integer.MIN_VALUE);
+        gameOfLife.setCellAlive(Integer.MIN_VALUE, Integer.MAX_VALUE);
+        gameOfLife.setCellAlive(Integer.MAX_VALUE, Integer.MIN_VALUE);
+        gameOfLife.setCellAlive(Integer.MAX_VALUE, Integer.MAX_VALUE);
+
+        gameOfLife.calculateNextGeneration();
+
+        HashSet<Point> coordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
+        assertThat(coordinatesOfAliveCells, is(newHashSet(
+                new Point(Integer.MIN_VALUE, Integer.MIN_VALUE),
+                new Point(Integer.MIN_VALUE, Integer.MAX_VALUE),
+                new Point(Integer.MAX_VALUE, Integer.MIN_VALUE),
+                new Point(Integer.MAX_VALUE, Integer.MAX_VALUE)
+        )));
+    }
+
+    private static Set<Point> _1000th_generation_of_linepuf_pattern_;
+    
+    @Theory
+    public void test_linepuf_pattern_after_1000_generations(GameOfLife gameOfLife) {
+        assumeThat(gameOfLife, is(not(instanceOf(SaschasGameOfLife1.class))));
+        if (_1000th_generation_of_linepuf_pattern_ == null) {
+            GameOfLife referenceGameOfLife = new SaschasGameOfLife1();
+            loadLifFile(referenceGameOfLife, "linepuf.lif");
+            for (int i = 1; i <= 1000; ++i) {
+                referenceGameOfLife.calculateNextGeneration();
+            }
+            _1000th_generation_of_linepuf_pattern_ = newHashSet(referenceGameOfLife.getCoordinatesOfAliveCells());
+        }        
+        loadLifFile(gameOfLife, "linepuf.lif");
+        for (int i = 1; i <= 1000; ++i) {
+            gameOfLife.calculateNextGeneration();
+        }
+        HashSet<Point> actualCoordinatesOfAliveCells = newHashSet(gameOfLife.getCoordinatesOfAliveCells());
+        assertThat(actualCoordinatesOfAliveCells, is(_1000th_generation_of_linepuf_pattern_));
+    }
+
+    private void loadLifFile(GameOfLife gameOfLife, String resourceFile) {
+        final InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(resourceFile);
+        final Pattern pattern = new Pattern(new BufferedReader(new InputStreamReader(resourceAsStream)));
+        for (int i = 0; i < pattern.getNumberOfCellBlocks(); ++i) {
+            final CellBlock cellBlock = pattern.getCellBlock(i);
+            for (Point p : cellBlock.getLivingCells()) {
+                gameOfLife.setCellAlive(cellBlock.getXOffset()+ p.x, cellBlock.getYOffset() + p.y);
+            }
+        }
     }
 }
